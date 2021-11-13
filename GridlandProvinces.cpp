@@ -1,0 +1,596 @@
+#include <algorithm>
+#include <cassert>
+#include <chrono>
+#include <iostream>
+#include <ostream>
+#include <unordered_set>
+#include <vector>
+
+
+#define PROFILING
+
+	using std::chrono::high_resolution_clock;
+	using std::chrono::duration_cast;
+	using std::chrono::duration;
+	using std::chrono::milliseconds;
+
+
+
+int time3{0};
+
+int cur_path_char_index=0;
+
+
+
+
+
+std::unordered_set<unsigned long long> unique_strings1;
+std::vector<unsigned long long> strings1;
+
+
+
+const int alph_size{26};
+const int Nmax{1200};
+unsigned long long p_pow_array[Nmax];
+unsigned long long p_pow_array2[Nmax];
+unsigned long long p_pow_char_array1[alph_size*Nmax];
+const int mod = 1000000000 + 7;
+const int mod2 = 1000000000 + 9;
+const int p = 31;
+bool p_pow_inited = false;
+
+
+unsigned long long compute_hash(std::string const& s) {
+	size_t size{s.size()};
+	unsigned long long a = 0;
+	for(int i=0;i<size;i++)
+	{
+		a+=p_pow_char_array1[s[i]*Nmax+i];
+	}
+	return a;
+}
+
+unsigned long long running_hash1[2*Nmax];
+unsigned long long running_hash2[2*Nmax];
+unsigned long long running_hash3[2*Nmax];
+unsigned long long running_hash4[2*Nmax];
+	
+int path_size;
+int path_size_m1;
+int s_size;
+
+std::vector<char> grid;
+int grid1[1200];
+int grid2[1200];
+int grid3[1200];
+int grid4[1200];
+
+
+void set_path_char1(int cur_i)
+{
+	const auto c1 = grid1[cur_i];
+	const auto c2 = grid2[cur_i];
+	const auto next_i{cur_path_char_index+1};
+	const auto inverse_index{path_size_m1 - cur_path_char_index};
+	
+	running_hash1[next_i] = running_hash1[cur_path_char_index] + p_pow_char_array1[c1+cur_path_char_index];
+	running_hash2[next_i] = running_hash2[cur_path_char_index] + p_pow_char_array1[c2+cur_path_char_index];
+	running_hash3[next_i] = running_hash3[cur_path_char_index] + p_pow_char_array1[c1+inverse_index];
+	running_hash4[next_i] = running_hash4[cur_path_char_index] + p_pow_char_array1[c2+inverse_index];
+	
+	cur_path_char_index++;
+	//time3 += duration_cast<std::chrono::microseconds>(t2 - t1);
+}
+
+unsigned long long h1;
+unsigned long long h2;
+unsigned long long h3;
+unsigned long long h4;
+void set_path_char2(
+	int cur_i
+	)
+{
+	//const auto c1 = grid1[cur_i];
+	const auto inverse_index{path_size_m1 - cur_path_char_index};
+
+	const auto c11 = grid3[cur_i];
+	const auto c21 = grid4[cur_i];
+	const auto c31 = grid3[cur_i];
+	const auto c41 = grid4[cur_i];
+	
+	//p_pow_char_array1[i*Nmax+j] = ((((i + 1) * p_pow_array[j]) % mod) << 7) + ((i + 1) * p_pow_array2[j]) % mod2;
+	//const auto hh1 = p_pow_char_array1[c1+cur_path_char_index];
+	//const auto hh2 = (((c11 * p_pow_array[cur_path_char_index]) % mod) << 7) + (c11 * p_pow_array2[cur_path_char_index]) % mod2;
+	//if (hh1!=hh2)
+	//{
+	//	bool b = false;
+	//}
+	
+	/*h1 += (((c11 * p_pow_array[cur_path_char_index]) % mod) << 7) + (c11 * p_pow_array2[cur_path_char_index]) % mod2;
+	h2 += (((c21 * p_pow_array[cur_path_char_index]) % mod) << 7) + (c21 * p_pow_array2[cur_path_char_index]) % mod2;
+	h3 += (((c11 * p_pow_array[inverse_index]) % mod) << 7) + (c11 * p_pow_array2[inverse_index]) % mod2;
+	h4 += (((c21 * p_pow_array[inverse_index]) % mod) << 7) + (c21 * p_pow_array2[inverse_index]) % mod2;*/
+	h1 += 
+	h2 += (((c21 * p_pow_array[cur_path_char_index]) % mod) << 7) + (c21 * p_pow_array2[cur_path_char_index]) % mod2;
+	h3 += (((c11 * p_pow_array[inverse_index]) % mod) << 7) + (c11 * p_pow_array2[inverse_index]) % mod2;
+	h4 += (((c21 * p_pow_array[inverse_index]) % mod) << 7) + (c21 * p_pow_array2[inverse_index]) % mod2;
+	
+	cur_path_char_index++;
+	//time3 += duration_cast<std::chrono::microseconds>(t2 - t1);
+}
+
+
+void add_path1(unsigned long long h)
+{
+	//unique_strings1.emplace(h);
+	strings1.push_back(h);
+}
+
+void add_path(const std::string& s, int mode)
+{
+	auto h{compute_hash(s)};
+	add_path1(h);
+	//unique_strings1.emplace(s);
+}
+
+std::string get_reverse(const std::string& s)
+{
+	std::string inverse_s=s;
+	std::reverse(inverse_s.begin(), inverse_s.end());
+
+
+	return inverse_s;
+}
+
+void init_ppow(unsigned long long* pow_array, size_t mod, bool shift)
+{
+	p_pow_inited = true;
+	pow_array[0] = 1;
+	for(int i{1};i<Nmax;i++)
+	{
+		pow_array[i]=(pow_array[i-1] * p)%mod;
+	}	
+}
+
+
+
+int gridlandProvinces(const std::string s1, const std::string s2)
+{
+
+	if (!p_pow_inited)
+	{
+		init_ppow(p_pow_array, mod, true);
+		init_ppow(p_pow_array2, mod2, false);
+
+			for(int i=0;i<alph_size;i++)
+		{
+			for(int j=0;j<Nmax;j++){
+	p_pow_char_array1[i*Nmax+j] = ((((i + 1) * p_pow_array[j]) % mod) << 7) + ((i + 1) * p_pow_array2[j]) % mod2;
+			}
+		}
+	}
+	
+	unique_strings1.clear();
+	strings1.clear();
+
+	
+	int N=s1.size();
+	strings1.reserve(N*N/2);
+
+
+	s_size=N;
+	path_size=2*N;
+	path_size_m1=path_size-1;
+	//cur_path_char_inverse_index = path_size - 1;
+
+
+	grid.resize(path_size);
+	for(int i=0;i<s1.size();++i)
+	{
+		grid[i]=s1[i]-'a';
+		grid[s_size+i]=s2[i]-'a';
+
+		grid1[i]=(s1[i]-'a')*Nmax;
+		grid1[s_size+i]=(s2[i]-'a')*Nmax;
+
+		grid2[s_size+i]=(s1[i]-'a')*Nmax;
+		grid2[i]=(s2[i]-'a')*Nmax;
+	}
+
+	bool print_pathes = false;
+
+	{
+		for(int i{0};i<N-2;++i)
+		{
+			int cur_y = -s_size;
+	
+			int cur_i{i};
+			cur_path_char_index=0;
+			set_path_char1(cur_i);
+			
+			for(int k=0;k<i;k++)
+			{
+				set_path_char1(--cur_i);
+			}
+
+			cur_y=-cur_y;
+			cur_i+=cur_y;
+			set_path_char1(cur_i);
+
+			for(int k=0;k<i+1;++k)
+			{
+				set_path_char1(++cur_i);
+			}
+	
+			int cur_y0;
+			int cur_i0;
+			for(int j{N-i-3};j>=0;j--)
+			{
+				cur_y=-cur_y;
+	cur_i+=cur_y;
+				set_path_char1(cur_i);
+				set_path_char1(++cur_i);
+
+				cur_y0=cur_y;
+				cur_i0=cur_i;
+				
+	for(int k=0;k<j;k++)
+	{
+					set_path_char1(++cur_i);
+	}
+				cur_y=-cur_y;
+	cur_i+=cur_y;
+	set_path_char1(cur_i);
+				for(int k=0;k<j;k++)
+	{
+					set_path_char1(--cur_i);
+	}
+
+
+				strings1.push_back(running_hash1[cur_path_char_index]);
+				strings1.push_back(running_hash2[cur_path_char_index]);
+				strings1.push_back(running_hash3[cur_path_char_index]);
+				strings1.push_back(running_hash4[cur_path_char_index]);
+				
+	cur_path_char_index-=j*2+1;
+
+				cur_y=cur_y0;
+				cur_i=cur_i0;
+			}		
+		}
+
+			if (N>1){
+			for(int i{0};i<N;++i)
+			{
+	int cur_y = -s_size;
+				cur_path_char_index=0;
+				int cur_i{i};
+				set_path_char1(cur_i);
+				
+				for(int k=0;k<N-1-i;++k)
+				{
+					set_path_char1(++cur_i);
+				}
+
+				cur_y=-cur_y;
+	cur_i+=cur_y;
+				set_path_char1(cur_i);
+
+				for(int k=0;k<N-1;k++)
+				{
+					set_path_char1(--cur_i);
+				}
+
+				if (i>0){
+					cur_y=-cur_y;
+		cur_i+=cur_y;
+					set_path_char1(cur_i);
+				}
+
+				for(int k=0;k<std::max(i-1,0);k++)
+				{
+					set_path_char1(++cur_i);
+				}
+
+				strings1.push_back(running_hash1[cur_path_char_index]);
+				strings1.push_back(running_hash2[cur_path_char_index]);
+				strings1.push_back(running_hash3[cur_path_char_index]);
+				strings1.push_back(running_hash4[cur_path_char_index]);
+				cur_path_char_index=0;
+			}
+		}
+
+		std::string path1(path_size,'+');
+		{
+			for(int i=0;i<N;i++)
+			{
+				path1[i]=grid[N-i-1];
+				path1[N+i]=grid[s_size+i];
+			}
+		 if (print_pathes){
+	std::cout << path1 << std::endl;
+			std::cout << get_reverse(path1) << std::endl;
+		  	}
+			add_path(path1, 4);
+				
+			add_path(get_reverse(path1), 4);
+		}
+	}
+
+	std::sort(strings1.begin(), strings1.end());
+	auto new_end=std::unique(strings1.begin(), strings1.end());
+	strings1.erase(new_end, strings1.end());
+	auto new_size = strings1.size();
+
+
+	return new_size;
+}
+
+int main()
+{
+	std::vector<std::string> input2{
+"abcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdef",
+"bcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefg",
+"cccdddcccdccdcccdcddcdccdddcdccccddcdcdccccddccddccccdcddcccdcccccdddddcccccddddddcccddccdccdddddccddcdcdcddddcccdcdccdddcdcdccdcccddcdccdcddddcdccddcddccddcddddcdccdddddcdccc",
+"ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+"aaaaaaaaaaaaaaaaaaaaaabaaaaaaaaaaaaaabaaaaaaaaaaaaaaaaabaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabbbbbbbbbbaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+"ijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmij",
+"jklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijk",
+"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+"aabaababbbabbaababababbbbbabbaaabaaababbaababbbaaaabbabbabbaaabbbbaabaabbabbbbbbbbabbaabababbbabaabaabaaaabbbabbbbbabbabbabbbbbaaabbbbbabbaaaabaababbbbababbbaaaabbbbabbbaaabbbaaabbaaa",
+"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+"adabacabccacbabbdacdbcccaabdacacaaacdacbcbcbabacaacbddbddcdabccaaaabdabdddaddbdbcdccbcaccdbdcbbaacaddcadacddcdcbaacbdaddbbaadcacacbddddcbabcbdbbdadcbdcdbcdabbacabc",
+"aabbbaaabbaabbabababaaababbbbabbbbaabbabbaaaabbababbabbbabbbabaaaaabbbbabbaababaaabaabbaabbabaabbaabbababaaab",
+"bcbccbbcccbccbbccbbccccbcccbccbbccbcbbcbcccbcbcccbcbcbccbccccbcbbcbcccccccbcbccccbbbbccbbccbccbbcbccbbbbbbcbc",
+"ijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijk",
+"jklmnoijklmnoijklmnoijklmnoijklmnoijklmnoijklmnoijklmnoijklmnoijklmnoijklmnoijklmnoijklmnoijklmnoijklmnoijklmnoijklmnoijklmnoijklmnoijklmnoijklmnoijklmnoijklmnoijklmnoijklmno",
+"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabaaaaaaaaaaaaaaaaaaabaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabaabaaaaaaaaabaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabaaaaaaaaaaaaaaaabaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabaaaaaaaaabaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+"aaaaabaaaaaaaaaaaaaaaaaaaaaaaaabaaaaaaaaaaaaacaaaabaaaaaaaaaabaaaaaaaaaaaabaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+"baaaaaacaaaaaaaaaaaaaaaacabaaabaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabaaaaaaaaacaaaaaaaaaaaaaabaaaabaaaaaaaaaaa",
+"ababababababababababababababababababababababababababababababababababababababababababababababababababababababababa",
+"babababababababababababababababababababababababababababababababababababababababababababababababababababababababab",
+"rstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrs",
+"strstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrst",
+"bbbbabaabbbbabbaaabbbabbbbababbaaabbbbaababaabbbabaaaabbabbabbabbaabbbbabbbbbbbababbbbabababbabbaaabaabbaaaababaabababbbaaaaabaabbbaabbbbababbababaaaaaaabaaaaaaabbababaabaababbbabaaabbabaabbaaaaababab",
+"aacbbacaaacbbcbbabcccbbbacaababacbccbabbaccbcbabaacbcaaccacaabcaaabaaccbabbcbcbacbbaababccacbacbaccabbbabacbacacbacacbcbbbabcabcacbcaccbacabcabcbbcbabccccababbcaacacbbaaccabaaccbcabaccababbccbbaacacbb",
+"ggggghhgghhhghhhggghgghhhgghhhhhhhhgghghghhhghhhhghghhgghghhggghghhggggghhhhgghhhggghhghgghhhghhhgghhggghhghggghghhhghhhgggggghgggghhgghgghggghgghhhghhhghghhghhghhgggghggghggghhghhggghhghghhhggghhghhh",
+"hiigihihhiigigghgghhhiighgggihghgihhhhhihhhhigihhgihigggghhhhgighhggiiihhiiiigigiihihiihgiihiiihiiihhgiihighiihggiigighhiiiighihhghghhhhhihhggiiihghghhgghhgghhgghhgghiiihghhihhhgigghghggihihiggigggigg",
+};
+	std::vector<int> expected_result2{
+14792,
+57484,
+2690 ,
+390	 ,
+8844 ,
+63746,
+52494,
+23334,
+59522,
+17870,
+17180,
+2	 ,
+20200,
+79208,
+79604
+		};
+
+	std::vector<std::string> input1{
+		"a",
+		"a",
+		"ababa",
+		"babab",
+		"dab",
+		"abd",
+	};
+
+	std::vector<int> expected_result1{1,2,8};
+
+	std::vector<std::string> input4{
+"x",
+"x",
+"cccdd",
+"ccccc",
+"abbaa",
+"aaaaa",
+"aaaaaa",
+"aabbbb",
+"ijklmi",
+"jklmij",
+"aaaaaaaaa",
+"aabbaaaab",
+"aaaaaaa",
+"acacdbd",
+"baaaaabb"  ,
+"ccccbbbc"	,
+"aaaaaaaa"	,
+"aaaaaaaa"	,
+"bbababa"	,
+"bbbabab"	,
+"cbaacbbaa"	,
+"bbcacaaab"	,
+"ababababab",
+"bababababa",
+"rstrstrstr",
+"strstrstrs",
+"bbaababbaa",
+"caccbbaaac",
+"hggghggghg",
+"hhiigghihh",
+	};
+
+	std::vector<int> expected_result4{
+1  ,
+12 ,
+16 ,
+30 ,
+24 ,
+76 ,
+78 ,
+94 ,
+1  ,
+14 ,
+110,
+2  ,
+60 ,
+154,
+152,
+	};
+	
+	std::vector<std::string> input3{
+"abcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghi",
+"bcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghij",
+"cccdddcccdccdcccdcddcdccdddcdccccddcdcdccccddccddccccdcddcccdcccccdddddcccccddddddcccddccdccdddddccddcdcdcddddcccdcdccdddcdcdccdcccddcdccdcddddcdccddcddccddcddddcdccdddddcdcccccdccddccddccdddcccdcddccdcdddccdcddccccccdcdcccdcccdcccdcdddcdcdcdccccddcccddccddddcdcdcccdcccccccdcddddcccdddcdcccddddcccdddccdcdccddccddcdcdddcccddccddcccddddcdcddccddcddccccdddddccdccddcdccdcccdccccdcdddddddcdddcccccdcddccdcdcdcddcdcdcccddcdcdcccddddcccdccccccdcccdccddcdcddddddcddcccddddccdddccc",
+"ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabbbbbbbbbbaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+"ijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijkl",
+"jklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklm",
+"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+"aaaabaaaaaaabbababaabaababbbabaaabbabaabbaaaaabababbbbaaaabbabaabbaabbabbaaabbbbbbabbbabbbabbbbabbbbabbbababbaabbaababbabbaababbbbbaaabbaabbaaabbbbbabbbabbaaaaababbbaabbbaaaaabbbabbbababaabbbbaabaabaababbaaababaabaabbbaaaabbabaabbbbabbabababbaaabbbaabaaaaabbaabbbabbbaaabaabbbaabbbbbbbbaabababbbabbbbababbaababbaaababbaaaaabbbbaabbbaaabbabaabbbabbbaabbaaabbabaaababbbabbbaaaaaabaaaabbaabaabaaabaabbbabbbababbabbabbaaaabaaabaaabbabbaaabbababbbaaabbabbbbbaabbbaabbbaaabbbbbbbbba",
+"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+"aaacccdaddbcdbcbabdcbcaaadcdaaccdbbcbccbdbdbbaacbacdbdcbbdacdaaabdadcbddcaadbcbdaabaabccaadbababbabacbdacdcddbabbabbbcbacbbadccddcacabbcbcacaacdaaacaaccccbabddbaacdabbacbdcddbbcaaabdbaadaabbbdcdcbdcddbaacadddcbdcbbcdbbaadcccdcadacdbdaacdddcabbadaccdddaaabbdabbddcacaccbdbbadadddababbaccdaaaaaaaddaacdbdcadacbbdaaddabdbddadbddccdbbbadabadbcacccdbccccdbccdacbaacdccbdacdddbabcddabcdacbccdbbbcacadbcbbbdabbdcccdcaababdcadbbdaccdacacddddaadbdddcdadbbadbddbaccc",
+"baababababbbbbabbbbabbbaabbbbbbabbababbbbbbbaabbbabaaaabbabaabaabaaaabbaaabbbababbabbbbbaaabbabababaaababaabaababaaabbaaabbabaaaaaaabaabbabaababaabbabaabbaaabaabbbaabaabbabababbababbabbabaababaaabbbaabbaaaaabaaaaaaabbababbaabaaaaaabbabbababbbaabaaaaaabbbaaababbaababbbbbbbbbaabbbbbaaaaabbabaababbbbabaababaabbbbaabbbbaababaabbabaaabbaabbbbbbaabbbbaabbbabbbabbababbaaaabbbabaabaaabababbaaaaaabbaaaabbbaaabaabbabbbbaaaabbabbaaaabbabbbbaabbabbabbbbaabbaaaaaababaaaabbaabbaab",
+"bbcbccbbbbcbccbbccbbcbccccccbccccbcbbbbbccbbbcbccccbcccbccbcccbbcccbccccbcbbbcbccbbbcbbbbcbccccccbcbbbbbbcbcccbbccbcccbcccbbbccbbcbcccccbbccccccbbbccbbcbccccbbcbccbbbbbbbcbccbccbbbbbcbcbcbbbbcbbbcbbcbccbccbccbbbbcbcbccccccccbbbbbbcbbbccbcbccbccbbbbcbcbcbccccbbbbcbccbbcbbccbbccbcbcccbcbbcccbbcccbbcbbbbccbcccccccbcbbccccbbbbccbcbbbbcbcbcbbcccbcbccbbcbbccbbbbcbcbbccbbcccbcccbbccbcbccccbccbbbcccbcbbbbcbbbcbbcbccbcbccccbbcccbbcbbbcccbbbcbcccbbccbccbccccccbbbbccccbcccbbccb",
+"ijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijki",
+"jklmnoijklmnoijklmnoijklmnoijklmnoijklmnoijklmnoijklmnoijklmnoijklmnoijklmnoijklmnoijklmnoijklmnoijklmnoijklmnoijklmnoijklmnoijklmnoijklmnoijklmnoijklmnoijklmnoijklmnoijklmnoijklmnoijklmnoijklmnoijklmnoijklmnoijklmnoijklmnoijklmnoijklmnoijklmnoijklmnoijklmnoijklmnoijklmnoijklmnoijklmnoijklmnoijklmnoijklmnoijklmnoijklmnoijklmnoijklmnoijklmnoijklmnoijklmnoijklmnoijklmnoijklmnoijklmnoijklmnoijklmnoijklmnoijklmno",
+"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabaaaaaaaaaaaaaaaaaaaaaaaaaa",
+"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabaaaaaaaaaaaaaaaaaaaaaaaaaaaabaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabaaaaaaaaaaaaaaaaaaaaaaaabaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaacaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabaaaaaaaaaaaaacaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaacaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaacaaaaaa",
+"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabaaaaaaaaaaaaaaaaaaaaaaaaaaaaaacaaaaacacabaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabcaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+"ababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababab",
+"bababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababa",
+"rstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrs",
+"strstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrst",
+"abababbbabbaaaaabababbbbbbbabaaaaaaaaaababbabbbbababaabbbbaabbbbbaababbaaaaabababbbabbbbaaababbbbbbaaaaabababbaaaababbbaababbaaababababbbbabbbaabbbbaaaabaaaaabaabaabbbbbbbabbaaabbbaabbabbbbaaaaabaabbbbabbbbbaaabaaaabbbaabaaababababababbabaaaabaabbabbbabaabaaabbabaaababbbbaaabbbaabbaabbaaaaaaababbaaaaaaabababaaabaaabaabbbabaabaabaaabbbbbababaabaaaabbabbbaabaababbbbbaaaabababbbabaaaabababbbbbbabbabaabaababbaaabbabaaaaababbbaaabababaaabaaabaaabaaaabbaaabbbbaaaaaabaaabababbbaaaaabbbababaabbbbaabbaab",
+"bcccbbcbacaabacbbcbccacbcaacacacbbbabbabacabccaacbaabbbcccabcaabaabcacaaacccabacabbbbacaabaccbbccbaabacbabcacababcacbacbaaccacaccabcbccabacbbbbacaabbcaacbbcaacacbacbaccacabbbacccbaaaccbaababcabcbbacabcaaabaaabbacbbcccbaacbaacacccaaacccbcaaabcaabaccbaabbaabaaacbaacabbbbbbcbbbbacaaaabaaacbabbbcaaaccaccbcbabcbbccaabcbbacbbbabbbacaacbbaabcbccabcacccbccbbcccabcbbccaacbaababbbcbabccbbcbcccbacbabcacabbbbbcbccbbcaabacacaabaaaaabbaaabccaaabbbacbbbbbbcaaaaabaacaaaaaabcccabccabcaacbccbbcabaccccbabbacccaacc",
+"ghghghgghhghhhhhhhhghhhggggghhgghhhhhghghhhhghghhghghghghgghgghggghhghghhhgghgghhgggghhhhhggghgghgghhghhgghhghghhhggggghhhhghghgghhghhhghhhhhggghggghghghghhhhghgggghghggghhgghhghghghgghgghghggghhhhghgghhhgghghghgghhgghhhghghghhggggghhhhgghhhggghhhhhhhgghgghhhgghhghhhhgggggghhhghhghgghggghhhhhhhhghgghhhgggghhghghhghhghgghghgghgghhhgghgggghhhhhhhggghgghhggghghhggghhhgghhhghgghghhhhhghghgggghgggggghhhghghghghhhhhgghghghgggghghhggggghghgggghgghggggghgggggghhhhhghhhggghghggghhhgghhghhgghggggghggggghh",
+"hghggihhggiiigggigiiiiihhhggghhihhhghghigigigihgiiggghigiihghggighghhiggiggiihhgihhgiighgihhggiihhgggghhhhhigghghhghggghigggihhiiiihiihgigggiihgiighggghhgiggighhiiighiiggiiihhhghiihhighhhgiiihhiihgigigigihiggighghhggiighghigiiiiihihhgghihhhhhghhhihihggiiihggigggiigiggiggihgghhgggghghgiighgggihihiiiihihiihhhhgihiiggiggiihhihigihhghighhghhigiihihihiihhhghihhgghhhhihihihihihhihighigiiggiigihihiggiiihhhgigiggighhhihihghiiigiiihghhgigighgiighigghgghihhihiigighhiigihhhghiihghghghgihighggiigggigiihiggi",	};
+
+	std::vector<int> expected_result3{
+111392,
+440884,
+46084 ,
+1046  ,
+105800,
+444644,
+410432,
+441806,
+337030,
+255854,
+301252,
+2	  ,
+125500,
+498008,
+492050,};
+
+
+	std::vector<std::string> input5{
+"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabbbbbbbbbbaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabaaaaaaaaaaaaaaaaaaaaaaaabaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+"jjiiiijjiijjjjiiiijjjjiijjiiiijjiijjjjiijjiiiijjjjiiiijjiijjjjiiiijjjjiijjiiiijjjjiiiijjiijjjjiijjiiiijjiijjjjiiiijjjjiijjiiiijjiijjjjiijjiiiijjjjiiiijjiijjjjiijjiiiijjiijjjjiiiijjjjiijjiiiijjjjiiiijjiijjjjiiiijjjjiijjiiiijjiijjjjiijjiiiijjjjiiiijjiijjjjiiiijjjjiijjiiiijjjjiiiijjiijjjjiijjiiiijjiijjjjiiiijjjjiijjiiiijjjjiiiijjiijjjjiiiijjjjiijjiiiijjiijjjjiijjiiiijjjjiiiijjiijjjjiijjiiiijjiijjjjiiiijjjjiijjiiiijjiijjjjiijjiiiijjjjiiiijjiijjjjiiiijjjjiijjiiiijjjjiiiijjiijjjjiijjiiiijjiijjjjiiiijjjjiijjiiiijj",
+"iijjjjiijjiiiijjjjiiiijjiijjjjiijjiiiijjiijjjjiiiijjjjiijjiiiijjjjiiiijjiijjjjiiiijjjjiijjiiiijjiijjjjiijjiiiijjjjiiiijjiijjjjiijjiiiijjiijjjjiiiijjjjiijjiiiijjiijjjjiijjiiiijjjjiiiijjiijjjjiiiijjjjiijjiiiijjjjiiiijjiijjjjiijjiiiijjiijjjjiiiijjjjiijjiiiijjjjiiiijjiijjjjiiiijjjjiijjiiiijjiijjjjiijjiiiijjjjiiiijjiijjjjiiiijjjjiijjiiiijjjjiiiijjiijjjjiijjiiiijjiijjjjiiiijjjjiijjiiiijjiijjjjiijjiiiijjjjiiiijjiijjjjiijjiiiijjiijjjjiiiijjjjiijjiiiijjjjiiiijjiijjjjiiiijjjjiijjiiiijjiijjjjiijjiiiijjjjiiiijjiijjjjii",
+"abcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghij",
+"bcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijkabcdefghijk",
+"ijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmij",
+"jklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijklmijk",
+"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+"bbbaabaabbabababbabbbbabaaabaabaaaaaaaaaaaabaaabaaaaabababaaabbbabbabbbbbaabaaabbbbaabbbbaabbabbbbabbabaaaabbaaaabaababbbbbabaabbaaaaaabbaaaaabbaaaaaaabaababaabaabbbbabbbbabababbaabbaaaaaaabbbabbbbbabbaabbbabbbabaaabaababbbbabaaaaabbbabababbaaaaabaaabbbbaaaaaaaaabbabaabbbaabbabbabbabbbabbbbbabbaaabaaabbaaaaababbbaabbaaaaabaaaabbbabbbbbababbbbaaabaaa",
+"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+"aadddaacdbddaababccdcdbacbcacdbdbdaacbbabbbccaccadcbddcdcaabcdcdcaadbacaddaaaddcdddbabdadcdadadbddbaabdccacacabbdbaaccbddbcbdabbbacaaabdaccdbdccccbbaadbadbbadcdddacacdbddbdaaacdacacbbbbdbcbdadbbbcacbcddbcaadddbabaadddcbcdcdcabdbbadccabddbbddacbdcbdacbaadbdcdbccbcdcabcdbabacadcbaccbbbccacbadbdabdccbadadcbbddbdddacbdbddaacccababcccadacaddbbadccdccaddcdadbbbadbdbdcadbbadacaccdcadacbcbadaddbdadcacbabaccabdccdadabbbccaaddbbdbabbbcabbacdcabcbaccbaacaaa",
+"ijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkijkij",
+"jklmnoijklmnoijklmnoijklmnoijklmnoijklmnoijklmnoijklmnoijklmnoijklmnoijklmnoijkl",
+"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabaaaaaaaaaaaaaaaaaaaaaababbaaabaaaaaaaaaa",
+"aaaaaaaabaaaaaaaaaaaaaaaaabaaaaaaaaaaaaaaaaaaaaaaaabaaaaaaaaaaaaaaaaaabaaaaaaa",
+"aaacaaaccaaaaaacaaaaaaaaaaaaaaaaaa",
+"aaaaaacaaaccaaaacaaabbacaacbaacaba",
+"abababababababab",
+"babababababababa",
+"rstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrst",
+"strstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstr",
+"babaabaabaabbabaababaaaababbaaaabaaaaabaabaaabbaaababbaabaaaaaaabbbaababbbabbbaaabbbaaababaaaabaaaabbabbabbaabbababbababaabbaababbbbabbaabbabaaaababaabababbbaaaababbbbaaabababaabbbaaaaabbbbbabaaabaabbabaabbbbbbbbaabbbaabaabaaaabaabaaaabbabaabbbbabaabbaabababbabbabbbbbbbbbbbaaaaabaaabbbbaabbbbbaaabaaabbbaaabbbabaababababaaaaababaaabbababaabaabaaabbaaabbbbabbaabababbbaaaaabbbbaabbbaaaaabbaaaabbbbbababaaababbbababbaaaabaaaaababbabbabbabaaaababaabbbbabbaabaaabbbbabbaabaaaaabbbbabbbabbabaabbbbabbabbaaababbaababbbaaababbbbbabbbabbabbbbbbbbbabaabaabbbabbabbabbaaaaaabbabbaaabaaabbabbbabaaabbababaababa",
+"accaacbaaccabbaccaccacacccababccaaacbbbbcbabbbaabaabcbbbacaabbacaaaaccaabbcacacccccbcabbbcabcaccbbbbaacbaababaaabcbaccccaccccbaacacccaccbcbcaccbcabbccaaaaacbbacaacbccacbcccaaababbaacaaaacbcaaacbcbcbbbbbbcbabaccaccbcbbcabcbbababccacbcccbbaabcaabbacaaaacabbacabbbcbabaabbabcbbbaccccaccbabcabbcbbcbbbbacccbcaaaabaccaabaabccbbbbbcaccabaccaabccccabacbcccabbcaabbcbabbbacbbabaaccaacacbccbbbaabcacbaccabbaacbcaccabacabcaaabacbbbaabccabaaabbbacccaacbacacacccaaacbaccacaccacaccaabbcacbbbaaaccbaccbbcbabccaacbacabacbbccbbcacbababccacaacaaabbbbacabbbbbabccbccbbacccbacabccaacabaaaaccbaabcacacabcbbbccbacacaccabb",
+"hhghghgghhhghggghhghgghghhhhhghhghhhghhhgghgghhhhhgghghhhghhhhhgghgghhhghhghgggghhgghgggghhghhhhghhhgghhhhhhhggghhhhhghghhhhgghghghghghhhgghhghhgghgghghghhghggghhhhhhhghggghghhghgggghhhhgggghghghhgghgggghhghhhgghhghghhhhhggghgggggghghhhgghghghhghhghgghhhghhhggghhhhhghghgggghhhhhhhghghghgghhhhhgghggghgghgghghhhghhhghhhhhhghghghgghghhhggghhhhghghhhhghggggggghgghghghhgggghhggggghgggghhgghghhgghhgggghhhhhhghghghhhgghhhhghhhgghhgggghgggggghghggggghhhggghhggghghghghhhhgghggghhghgghhggghghghhghhhggghhhggggghgghhgghhhghghhgghhhghghhgghgghgghghghhghgghghghhhhghhhhhgggghghhhhhhhghhhgggghhggggggghhhhgghh",
+"hhghgihhhhgighgiighhgigiihghghihhihgiggiggighigiighhighhhhiihgghggigigghiiighihihgghiiihhiggiggghiihgihhhhighhihiiiggggghhiigggiiihigighggghghiigighgggggihgghiiighggggggihgiigihhhiiihghhggigggghihgigigiihhhihihighghgigigihggggihiiiihhhhgghiggggiighghiihhhhihghhhhgghhhhiighiiihgghggiihhhgihihhggghiihhhgggiigggigihgggghgigghggihghhhiiggghghhhgghhhghhiihgihigihhghhihgghghghhiggihiihghihghghgghgghghghhhigihiiihigiihihhhhhgghhhhiihiihhiigiiiihhihihghihgiighiighigghggihgghghgiiiihhhiigigiihiihhghhiihigggihhggiigihhhihghgghihhgigggigihgiggiihhggigihghhigighgghihiiighiihigigiighhhgggghiggggigighgiihii",
+"jjiiiijjiijjjjiiiijjjjiijjiiiijjiijjjjiijjiiiijjjjiiiijjiijjjjiiiijjjjiijjiiiijjjjiiiijjiijjjjiijjiiiijjiijjjjiiiijjjjiijjiiiijjiijjjjiijjiiiijjjjiiiijjiijjjjiijjiiiijjiijjjjiiiijjjjiijjiiiijjjjiiiijjiijjjjiiiijjjjiijjiiiijjiijjjjiijjiiiijjjjiiiijjiijjjjiiiijjjjiijjiiiijjjjiiiijjiijjjjiijjiiiijjiijjjjiiiijjjjiijjiiiijjjjiiiijjiijjjjiiiijjjjiijjiiiijjiijjjjiijjiiiijjjjiiiijjiijjjjiijjiiiijjiijjjjiiiijjjjiijjiiiijjiijjjjiijjiiiijjjjiiiijjiijjjjiiiijjjjiijjiiiijjjjiiiijjiijjjjiijjiiiijjiijjjjiiiijjjjiijjiiiijjjjiiiijjiijjjjiiiijjjjiijjiiiijjiijjjjiijjiiiijjjjiiiijjiijjjjiiiijjjjiijjiiiijjjjiiiijj",
+"iijjjjiijjiiiijjjjiiiijjiijjjjiijjiiiijjiijjjjiiiijjjjiijjiiiijjjjiiiijjiijjjjiiiijjjjiijjiiiijjiijjjjiijjiiiijjjjiiiijjiijjjjiijjiiiijjiijjjjiiiijjjjiijjiiiijjiijjjjiijjiiiijjjjiiiijjiijjjjiiiijjjjiijjiiiijjjjiiiijjiijjjjiijjiiiijjiijjjjiiiijjjjiijjiiiijjjjiiiijjiijjjjiiiijjjjiijjiiiijjiijjjjiijjiiiijjjjiiiijjiijjjjiiiijjjjiijjiiiijjjjiiiijjiijjjjiijjiiiijjiijjjjiiiijjjjiijjiiiijjiijjjjiijjiiiijjjjiiiijjiijjjjiijjiiiijjiijjjjiiiijjjjiijjiiiijjjjiiiijjiijjjjiiiijjjjiijjiiiijjiijjjjiijjiiiijjjjiiiijjiijjjjiiiijjjjiijjiiiijjjjiiiijjiijjjjiijjiiiijjiijjjjiiiijjjjiijjiiiijjjjiiiijjiijjjjiiiijjjjii",
+	};
+
+		std::vector<int> expected_result5{
+1294  ,
+7378  ,
+261634,
+87362 ,
+136764,
+241534,
+396960,
+12334 ,
+7716  ,
+1764  ,
+2	  ,
+180600,
+716414,
+716412,
+718804,
+};
+
+	std::vector<std::string> my_test{
+		"hijklm",
+		"abcdef",};
+	std::vector<int> my_result{1};
+	
+	std::vector<std::pair<std::vector<std::string>,std::vector<int>>> tests{
+		//{my_test, my_result},
+		{input1, expected_result1},
+		{input2, expected_result2},
+		{input3, expected_result3},
+		{input4, expected_result4},
+		{input5, expected_result5},
+	};
+
+//		"012345",
+//		"abcdef",
+
+	int i{0};
+
+	#ifdef PROFILING
+	auto t1 = high_resolution_clock::now();
+	#endif
+
+	
+	for(const auto& pair:tests){
+		auto input = pair.first;
+		auto expected_result = pair.second;
+		std::vector<int> rr;
+		for(int i=0;i<input.size()/2;i++)
+		{
+			int r = gridlandProvinces(input[2*i],input[2*i+1]);
+			//int r = gp(input[2*i],input[2*i+1]);
+			//gridlandProvinces(input[2*i],input[2*i+1],1,2);
+			rr.push_back(r);
+			//std::cout << r << std::endl;
+			//std::cout << gridlandProvinces(input[2*i],input[2*i+1],1,1) << std::endl;
+			//std::cout << gridlandProvinces(input[2*i],input[2*i+1],3) << std::endl;
+		}
+		std::cout << ((rr == expected_result)?"true":"false") << std::endl;
+		i++;
+	}
+
+	#ifdef PROFILING
+	auto t2 = high_resolution_clock::now();
+	time3 += duration_cast<std::chrono::milliseconds>(t2 - t1).count();
+#endif
+#ifdef PROFILING
+	std::cout << "emplace:" << time3  << "	 " <<  std::endl;
+#endif
+	std::cout << "unique:  " << unique_strings1.size() << std::endl;
+	std::cout << "total:  " << strings1.size() << std::endl;
+
+}
