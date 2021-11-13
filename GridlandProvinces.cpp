@@ -50,70 +50,29 @@ unsigned long long compute_hash(std::string const& s) {
 	return a;
 }
 
-unsigned long long running_hash1[2*Nmax];
-unsigned long long running_hash2[2*Nmax];
-unsigned long long running_hash3[2*Nmax];
-unsigned long long running_hash4[2*Nmax];
-	
 int path_size;
 int path_size_m1;
 int s_size;
 
-std::vector<char> grid;
+char grid[1200];
 int grid1[1200];
 int grid2[1200];
-int grid3[1200];
-int grid4[1200];
-
-
-void set_path_char1(int cur_i)
-{
-	const auto c1 = grid1[cur_i];
-	const auto c2 = grid2[cur_i];
-	const auto next_i{cur_path_char_index+1};
-	const auto inverse_index{path_size_m1 - cur_path_char_index};
-	
-	running_hash1[next_i] = running_hash1[cur_path_char_index] + p_pow_char_array1[c1+cur_path_char_index];
-	running_hash2[next_i] = running_hash2[cur_path_char_index] + p_pow_char_array1[c2+cur_path_char_index];
-	running_hash3[next_i] = running_hash3[cur_path_char_index] + p_pow_char_array1[c1+inverse_index];
-	running_hash4[next_i] = running_hash4[cur_path_char_index] + p_pow_char_array1[c2+inverse_index];
-	
-	cur_path_char_index++;
-	//time3 += duration_cast<std::chrono::microseconds>(t2 - t1);
-}
 
 unsigned long long h1;
 unsigned long long h2;
 unsigned long long h3;
 unsigned long long h4;
-void set_path_char2(
-	int cur_i
-	)
-{
-	//const auto c1 = grid1[cur_i];
-	const auto inverse_index{path_size_m1 - cur_path_char_index};
 
-	const auto c11 = grid3[cur_i];
-	const auto c21 = grid4[cur_i];
-	const auto c31 = grid3[cur_i];
-	const auto c41 = grid4[cur_i];
+void set_path_char1(int cur_i)
+{
+	const auto c1 = grid1[cur_i];
+	const auto c2 = grid2[cur_i];
+	const auto inverse_index{path_size_m1 - cur_path_char_index};
 	
-	//p_pow_char_array1[i*Nmax+j] = ((((i + 1) * p_pow_array[j]) % mod) << 7) + ((i + 1) * p_pow_array2[j]) % mod2;
-	//const auto hh1 = p_pow_char_array1[c1+cur_path_char_index];
-	//const auto hh2 = (((c11 * p_pow_array[cur_path_char_index]) % mod) << 7) + (c11 * p_pow_array2[cur_path_char_index]) % mod2;
-	//if (hh1!=hh2)
-	//{
-	//	bool b = false;
-	//}
-	
-	/*h1 += (((c11 * p_pow_array[cur_path_char_index]) % mod) << 7) + (c11 * p_pow_array2[cur_path_char_index]) % mod2;
-	h2 += (((c21 * p_pow_array[cur_path_char_index]) % mod) << 7) + (c21 * p_pow_array2[cur_path_char_index]) % mod2;
-	h3 += (((c11 * p_pow_array[inverse_index]) % mod) << 7) + (c11 * p_pow_array2[inverse_index]) % mod2;
-	h4 += (((c21 * p_pow_array[inverse_index]) % mod) << 7) + (c21 * p_pow_array2[inverse_index]) % mod2;*/
-	h1 += 
-	h2 += (((c21 * p_pow_array[cur_path_char_index]) % mod) << 7) + (c21 * p_pow_array2[cur_path_char_index]) % mod2;
-	h3 += (((c11 * p_pow_array[inverse_index]) % mod) << 7) + (c11 * p_pow_array2[inverse_index]) % mod2;
-	h4 += (((c21 * p_pow_array[inverse_index]) % mod) << 7) + (c21 * p_pow_array2[inverse_index]) % mod2;
+	h1 += p_pow_char_array1[c1+cur_path_char_index];
+	h2 += p_pow_char_array1[c2+cur_path_char_index];
+	h3 += p_pow_char_array1[c1+inverse_index];
+	h4 += p_pow_char_array1[c2+inverse_index];
 	
 	cur_path_char_index++;
 	//time3 += duration_cast<std::chrono::microseconds>(t2 - t1);
@@ -162,10 +121,10 @@ int gridlandProvinces(const std::string s1, const std::string s2)
 		init_ppow(p_pow_array, mod, true);
 		init_ppow(p_pow_array2, mod2, false);
 
-			for(int i=0;i<alph_size;i++)
+		for(int i=0;i<alph_size;i++)
 		{
 			for(int j=0;j<Nmax;j++){
-	p_pow_char_array1[i*Nmax+j] = ((((i + 1) * p_pow_array[j]) % mod) << 7) + ((i + 1) * p_pow_array2[j]) % mod2;
+				p_pow_char_array1[i*Nmax+j] = ((((i + 1) * p_pow_array[j]) % mod) << 7) + ((i + 1) * p_pow_array2[j]) % mod2;
 			}
 		}
 	}
@@ -184,7 +143,6 @@ int gridlandProvinces(const std::string s1, const std::string s2)
 	//cur_path_char_inverse_index = path_size - 1;
 
 
-	grid.resize(path_size);
 	for(int i=0;i<s1.size();++i)
 	{
 		grid[i]=s1[i]-'a';
@@ -202,6 +160,10 @@ int gridlandProvinces(const std::string s1, const std::string s2)
 	{
 		for(int i{0};i<N-2;++i)
 		{
+			h1=0;
+			h2=0;
+			h3=0;
+			h4=0;
 			int cur_y = -s_size;
 	
 			int cur_i{i};
@@ -222,47 +184,66 @@ int gridlandProvinces(const std::string s1, const std::string s2)
 				set_path_char1(++cur_i);
 			}
 	
-			int cur_y0;
 			int cur_i0;
+			int cur_y0;
+			int cur_path_char_index0;
+			unsigned long long h10;
+			unsigned long long h20;
+			unsigned long long h30;
+			unsigned long long h40;
 			for(int j{N-i-3};j>=0;j--)
 			{
 				cur_y=-cur_y;
-	cur_i+=cur_y;
+				cur_i+=cur_y;
 				set_path_char1(cur_i);
 				set_path_char1(++cur_i);
 
-				cur_y0=cur_y;
 				cur_i0=cur_i;
+				cur_y0=cur_y;
+				cur_path_char_index0=cur_path_char_index;
+
+				h10=h1;
+				h20=h2;
+				h30=h3;
+				h40=h4;
 				
-	for(int k=0;k<j;k++)
-	{
-					set_path_char1(++cur_i);
-	}
-				cur_y=-cur_y;
-	cur_i+=cur_y;
-	set_path_char1(cur_i);
 				for(int k=0;k<j;k++)
-	{
+				{
+					set_path_char1(++cur_i);
+				}
+				cur_y=-cur_y;
+				cur_i+=cur_y;
+				set_path_char1(cur_i);
+				for(int k=0;k<j;k++)
+				{
 					set_path_char1(--cur_i);
-	}
+				}
 
 
-				strings1.push_back(running_hash1[cur_path_char_index]);
-				strings1.push_back(running_hash2[cur_path_char_index]);
-				strings1.push_back(running_hash3[cur_path_char_index]);
-				strings1.push_back(running_hash4[cur_path_char_index]);
+				strings1.push_back(h1);
+				strings1.push_back(h2);
+				strings1.push_back(h3);
+				strings1.push_back(h4);
 				
-	cur_path_char_index-=j*2+1;
-
-				cur_y=cur_y0;
-				cur_i=cur_i0;
+				cur_path_char_index=cur_path_char_index0;
+            	cur_i=cur_i0;
+            	cur_y=cur_y0;
+            	h1=h10;
+            	h2=h20;
+            	h3=h30;
+            	h4=h40;
 			}		
 		}
 
 			if (N>1){
 			for(int i{0};i<N;++i)
 			{
-	int cur_y = -s_size;
+				h1=0;
+				h2=0;
+				h3=0;
+				h4=0;
+				
+				int cur_y = -s_size;
 				cur_path_char_index=0;
 				int cur_i{i};
 				set_path_char1(cur_i);
@@ -273,7 +254,7 @@ int gridlandProvinces(const std::string s1, const std::string s2)
 				}
 
 				cur_y=-cur_y;
-	cur_i+=cur_y;
+				cur_i+=cur_y;
 				set_path_char1(cur_i);
 
 				for(int k=0;k<N-1;k++)
@@ -283,7 +264,7 @@ int gridlandProvinces(const std::string s1, const std::string s2)
 
 				if (i>0){
 					cur_y=-cur_y;
-		cur_i+=cur_y;
+					cur_i+=cur_y;
 					set_path_char1(cur_i);
 				}
 
@@ -292,10 +273,10 @@ int gridlandProvinces(const std::string s1, const std::string s2)
 					set_path_char1(++cur_i);
 				}
 
-				strings1.push_back(running_hash1[cur_path_char_index]);
-				strings1.push_back(running_hash2[cur_path_char_index]);
-				strings1.push_back(running_hash3[cur_path_char_index]);
-				strings1.push_back(running_hash4[cur_path_char_index]);
+				strings1.push_back(h1);
+				strings1.push_back(h2);
+				strings1.push_back(h3);
+				strings1.push_back(h4);
 				cur_path_char_index=0;
 			}
 		}
