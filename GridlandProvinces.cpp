@@ -40,21 +40,10 @@ const int p = 31;
 bool p_pow_inited = false;
 
 
-unsigned long long compute_hash(std::string const& s) {
-	size_t size{s.size()};
-	unsigned long long a = 0;
-	for(int i=0;i<size;i++)
-	{
-		a+=p_pow_char_array1[s[i]*Nmax+i];
-	}
-	return a;
-}
+static int path_size;
+static int path_size_m1;
+static int s_size;
 
-int path_size;
-int path_size_m1;
-int s_size;
-
-char grid[1200];
 int grid1[1200];
 int grid2[1200];
 
@@ -78,6 +67,14 @@ inline void set_path_char1(int cur_i)
 	//time3 += duration_cast<std::chrono::microseconds>(t2 - t1);
 }
 
+unsigned long long compute_hash(const int s[]) {
+	unsigned long long a = 0;
+	for(int i=0;i<path_size;i++)
+	{
+		a+=p_pow_char_array1[s[i]+i];
+	}
+	return a;
+}
 
 void add_path1(unsigned long long h)
 {
@@ -85,20 +82,11 @@ void add_path1(unsigned long long h)
 	strings1.push_back(h);
 }
 
-void add_path(const std::string& s, int mode)
+void add_path(const int s[], int mode)
 {
 	auto h{compute_hash(s)};
 	add_path1(h);
 	//unique_strings1.emplace(s);
-}
-
-std::string get_reverse(const std::string& s)
-{
-	std::string inverse_s=s;
-	std::reverse(inverse_s.begin(), inverse_s.end());
-
-
-	return inverse_s;
 }
 
 void init_ppow(unsigned long long* pow_array, size_t mod, bool shift)
@@ -145,9 +133,6 @@ int gridlandProvinces(const std::string s1, const std::string s2)
 
 	for(int i=0;i<s1.size();++i)
 	{
-		grid[i]=s1[i]-'a';
-		grid[s_size+i]=s2[i]-'a';
-
 		grid1[i]=(s1[i]-'a')*Nmax;
 		grid1[s_size+i]=(s2[i]-'a')*Nmax;
 
@@ -281,20 +266,16 @@ int gridlandProvinces(const std::string s1, const std::string s2)
 			}
 		}
 
-		std::string path1(path_size,'+');
+		int path1[Nmax];
 		{
 			for(int i=0;i<N;i++)
 			{
-				path1[i]=grid[N-i-1];
-				path1[N+i]=grid[s_size+i];
+				path1[i]=grid1[N-i-1];
+				path1[N+i]=grid1[s_size+i];
 			}
-		 if (print_pathes){
-	std::cout << path1 << std::endl;
-			std::cout << get_reverse(path1) << std::endl;
-		  	}
 			add_path(path1, 4);
-				
-			add_path(get_reverse(path1), 4);
+			std::reverse(path1, path1+path_size);;
+			add_path(path1, 4);
 		}
 	}
 
