@@ -63,7 +63,7 @@ unsigned long long h2;
 unsigned long long h3;
 unsigned long long h4;
 
-void set_path_char1(int cur_i)
+inline void set_path_char1(int cur_i)
 {
 	const auto c1 = grid1[cur_i];
 	const auto c2 = grid2[cur_i];
