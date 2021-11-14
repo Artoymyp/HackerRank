@@ -76,17 +76,10 @@ unsigned long long compute_hash(const int s[]) {
 	return a;
 }
 
-void add_path1(unsigned long long h)
+void add_path(unsigned long long h)
 {
 	//unique_strings1.emplace(h);
 	strings1.push_back(h);
-}
-
-void add_path(const int s[], int mode)
-{
-	auto h{compute_hash(s)};
-	add_path1(h);
-	//unique_strings1.emplace(s);
 }
 
 void init_ppow(unsigned long long* pow_array, size_t mod, bool shift)
@@ -273,9 +266,9 @@ int gridlandProvinces(const std::string s1, const std::string s2)
 				path1[i]=grid1[N-i-1];
 				path1[N+i]=grid1[s_size+i];
 			}
-			add_path(path1, 4);
-			std::reverse(path1, path1+path_size);;
-			add_path(path1, 4);
+			add_path(compute_hash(path1));
+			std::reverse(path1, path1+path_size);
+			add_path(compute_hash(path1));
 		}
 	}
 
