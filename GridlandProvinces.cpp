@@ -20,17 +20,10 @@ int time3{0};
 
 int cur_path_char_index=0;
 
-
-
-
-
 std::vector<unsigned long long> path_hashes;
-
 
 const int alph_size{26};
 const int Nmax{1200};
-unsigned long long p_pow_array[Nmax];
-unsigned long long p_pow_array2[Nmax];
 unsigned long long p_pow_char_array1[alph_size*Nmax];
 const int mod = 1000000000 + 7;
 const int mod2 = 1000000000 + 9;
@@ -78,30 +71,21 @@ void add_path(unsigned long long h)
 	path_hashes.push_back(h);
 }
 
-void init_ppow(unsigned long long* pow_array, size_t mod, bool shift)
-{
-	p_pow_inited = true;
-	pow_array[0] = 1;
-	for(int i{1};i<Nmax;i++)
-	{
-		pow_array[i]=(pow_array[i-1] * p)%mod;
-	}	
-}
-
-
-
 int gridlandProvinces(const std::string s1, const std::string s2)
 {
 
 	if (!p_pow_inited)
 	{
-		init_ppow(p_pow_array, mod, true);
-		init_ppow(p_pow_array2, mod2, false);
-
 		for(int i=0;i<alph_size;i++)
 		{
+			unsigned long long p1=1;
+			unsigned long long p2=1;
+			
 			for(int j=0;j<Nmax;j++){
-				p_pow_char_array1[i*Nmax+j] = ((((i + 1) * p_pow_array[j]) % mod) << 7) + ((i + 1) * p_pow_array2[j]) % mod2;
+				p_pow_char_array1[i*Nmax+j] = ((((i + 1) * p1) % mod) << 7) + ((i + 1) * p2) % mod2;
+
+				p1=(p1 * p)%mod;
+				p2=(p2 * p)%mod2;
 			}
 		}
 	}
@@ -161,6 +145,9 @@ int gridlandProvinces(const std::string s1, const std::string s2)
 			unsigned long long h20;
 			unsigned long long h30;
 			unsigned long long h40;
+
+
+			
 			for(int j{N-i-3};j>=0;j--)
 			{
 				cur_y=-cur_y;
