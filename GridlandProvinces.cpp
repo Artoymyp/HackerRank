@@ -24,9 +24,7 @@ int cur_path_char_index=0;
 
 
 
-std::unordered_set<unsigned long long> unique_strings1;
-std::vector<unsigned long long> strings1;
-
+std::vector<unsigned long long> path_hashes;
 
 
 const int alph_size{26};
@@ -64,7 +62,6 @@ inline void set_path_char1(int cur_i)
 	h4 += p_pow_char_array1[c2+inverse_index];
 	
 	cur_path_char_index++;
-	//time3 += duration_cast<std::chrono::microseconds>(t2 - t1);
 }
 
 unsigned long long compute_hash(const int s[]) {
@@ -78,8 +75,7 @@ unsigned long long compute_hash(const int s[]) {
 
 void add_path(unsigned long long h)
 {
-	//unique_strings1.emplace(h);
-	strings1.push_back(h);
+	path_hashes.push_back(h);
 }
 
 void init_ppow(unsigned long long* pow_array, size_t mod, bool shift)
@@ -110,18 +106,16 @@ int gridlandProvinces(const std::string s1, const std::string s2)
 		}
 	}
 	
-	unique_strings1.clear();
-	strings1.clear();
+	path_hashes.clear();
 
 	
 	int N=s1.size();
-	strings1.reserve(N*N/2);
+	path_hashes.reserve(N*N/2);
 
 
 	s_size=N;
 	path_size=2*N;
 	path_size_m1=path_size-1;
-	//cur_path_char_inverse_index = path_size - 1;
 
 
 	for(int i=0;i<s1.size();++i)
@@ -132,8 +126,6 @@ int gridlandProvinces(const std::string s1, const std::string s2)
 		grid2[s_size+i]=(s1[i]-'a')*Nmax;
 		grid2[i]=(s2[i]-'a')*Nmax;
 	}
-
-	bool print_pathes = false;
 
 	{
 		for(int i{0};i<N-2;++i)
@@ -198,10 +190,10 @@ int gridlandProvinces(const std::string s1, const std::string s2)
 				}
 
 
-				strings1.push_back(h1);
-				strings1.push_back(h2);
-				strings1.push_back(h3);
-				strings1.push_back(h4);
+				path_hashes.push_back(h1);
+				path_hashes.push_back(h2);
+				path_hashes.push_back(h3);
+				path_hashes.push_back(h4);
 				
 				cur_path_char_index=cur_path_char_index0;
             	cur_i=cur_i0;
@@ -251,10 +243,10 @@ int gridlandProvinces(const std::string s1, const std::string s2)
 					set_path_char1(++cur_i);
 				}
 
-				strings1.push_back(h1);
-				strings1.push_back(h2);
-				strings1.push_back(h3);
-				strings1.push_back(h4);
+				path_hashes.push_back(h1);
+				path_hashes.push_back(h2);
+				path_hashes.push_back(h3);
+				path_hashes.push_back(h4);
 				cur_path_char_index=0;
 			}
 		}
@@ -272,10 +264,10 @@ int gridlandProvinces(const std::string s1, const std::string s2)
 		}
 	}
 
-	std::sort(strings1.begin(), strings1.end());
-	auto new_end=std::unique(strings1.begin(), strings1.end());
-	strings1.erase(new_end, strings1.end());
-	auto new_size = strings1.size();
+	std::sort(path_hashes.begin(), path_hashes.end());
+	auto new_end=std::unique(path_hashes.begin(), path_hashes.end());
+	path_hashes.erase(new_end, path_hashes.end());
+	auto new_size = path_hashes.size();
 
 
 	return new_size;
@@ -527,12 +519,7 @@ int main()
 		for(int i=0;i<input.size()/2;i++)
 		{
 			int r = gridlandProvinces(input[2*i],input[2*i+1]);
-			//int r = gp(input[2*i],input[2*i+1]);
-			//gridlandProvinces(input[2*i],input[2*i+1],1,2);
 			rr.push_back(r);
-			//std::cout << r << std::endl;
-			//std::cout << gridlandProvinces(input[2*i],input[2*i+1],1,1) << std::endl;
-			//std::cout << gridlandProvinces(input[2*i],input[2*i+1],3) << std::endl;
 		}
 		std::cout << ((rr == expected_result)?"true":"false") << std::endl;
 		i++;
@@ -545,7 +532,6 @@ int main()
 #ifdef PROFILING
 	std::cout << "emplace:" << time3  << "	 " <<  std::endl;
 #endif
-	std::cout << "unique:  " << unique_strings1.size() << std::endl;
-	std::cout << "total:  " << strings1.size() << std::endl;
+	std::cout << "total:  " << path_hashes.size() << std::endl;
 
 }
