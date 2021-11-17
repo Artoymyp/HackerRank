@@ -44,7 +44,7 @@ inline void update_rolling_hashes(int cur_i)
 	h2 += p_pow_char_array1[c2+cur_path_char_index];
 	h3 += p_pow_char_array1[c1+inverse_index];
 	h4 += p_pow_char_array1[c2+inverse_index];
-	
+
 	cur_path_char_index++;
 }
 
@@ -98,7 +98,7 @@ int GridlandProvinces(const std::string s1, const std::string s2)
 	}
 
 	{
-		for(int i{0};i<N-2;++i)
+		for(int i{0};i<N-1;++i)
 		{
 			h1=0;
 			h2=0;
@@ -123,38 +123,41 @@ int GridlandProvinces(const std::string s1, const std::string s2)
 			{
 				update_rolling_hashes(++cur_i);
 			}
-	
-			int cur_i0;
-			int cur_y0;
-			int cur_path_char_index0;
-			unsigned long long h10;
-			unsigned long long h20;
-			unsigned long long h30;
-			unsigned long long h40;
-			for(int j{N-i-3};j>=0;j--)
+
+			int cur_i0{cur_i};
+			int cur_y0{cur_y};
+			int cur_path_char_index0{cur_path_char_index};
+			unsigned long long h10{h1};
+			unsigned long long h20{h2};
+			unsigned long long h30{h3};
+			unsigned long long h40{h4};
+			for(int j{0};j<N-i-1;j++)
 			{
-				cur_y=-cur_y;
-				cur_i+=cur_y;
-				update_rolling_hashes(cur_i);
-				update_rolling_hashes(++cur_i);
+				if (j > 0)
+				{
+					cur_y=-cur_y;
+					cur_i+=cur_y;
+					update_rolling_hashes(cur_i);
+					update_rolling_hashes(++cur_i);
+					
+					cur_i0=cur_i;
+					cur_y0=cur_y;
+					cur_path_char_index0=cur_path_char_index;
+	
+					h10=h1;
+					h20=h2;
+					h30=h3;
+					h40=h4;
+				}
 
-				cur_i0=cur_i;
-				cur_y0=cur_y;
-				cur_path_char_index0=cur_path_char_index;
-
-				h10=h1;
-				h20=h2;
-				h30=h3;
-				h40=h4;
-				
-				for(int k=0;k<j;k++)
+				for(int k=0;k<N-j-i-2;k++)
 				{
 					update_rolling_hashes(++cur_i);
 				}
 				cur_y=-cur_y;
 				cur_i+=cur_y;
 				update_rolling_hashes(cur_i);
-				for(int k=0;k<j;k++)
+				for(int k=0;k<N-j-i-2;k++)
 				{
 					update_rolling_hashes(--cur_i);
 				}
@@ -163,7 +166,7 @@ int GridlandProvinces(const std::string s1, const std::string s2)
 				path_hashes.push_back(h2);
 				path_hashes.push_back(h3);
 				path_hashes.push_back(h4);
-				
+
 				cur_path_char_index=cur_path_char_index0;
             	cur_i=cur_i0;
             	cur_y=cur_y0;
@@ -174,63 +177,25 @@ int GridlandProvinces(const std::string s1, const std::string s2)
 			}
 		}
 
-		if (N>1)
+		int path1[Nmax];
+		int path2[Nmax];
 		{
 			for(int i{0};i<N;++i)
 			{
-				h1=0;
-				h2=0;
-				h3=0;
-				h4=0;
+				path1[i]=grid[i];
+				path1[N+i]=grid[2*N-i-1];
 				
-				int cur_y = -N;
-				cur_path_char_index=0;
-				int cur_i{i};
-				update_rolling_hashes(cur_i);
-				
-				for(int k=0;k<N-1-i;++k)
-				{
-					update_rolling_hashes(++cur_i);
-				}
-
-				cur_y=-cur_y;
-				cur_i+=cur_y;
-				update_rolling_hashes(cur_i);
-
-				for(int k=0;k<N-1;k++)
-				{
-					update_rolling_hashes(--cur_i);
-				}
-
-				if (i>0){
-					cur_y=-cur_y;
-					cur_i+=cur_y;
-					update_rolling_hashes(cur_i);
-				}
-
-				for(int k=0;k<std::max(i-1,0);k++)
-				{
-					update_rolling_hashes(++cur_i);
-				}
-
-				path_hashes.push_back(h1);
-				path_hashes.push_back(h2);
-				path_hashes.push_back(h3);
-				path_hashes.push_back(h4);
-				cur_path_char_index=0;
+				path2[i]=grid[N-i-1];
+				path2[N+i]=grid[N+i];
 			}
-		}
 
-		int path1[Nmax];
-		{
-			for(int i=0;i<N;i++)
-			{
-				path1[i]=grid[N-i-1];
-				path1[N+i]=grid[N+i];
-			}
 			add_path(compute_hash(path1));
 			std::reverse(path1, path1+path_size);
 			add_path(compute_hash(path1));
+
+			add_path(compute_hash(path2));
+			std::reverse(path2, path2+path_size);
+			add_path(compute_hash(path2));
 		}
 	}
 
