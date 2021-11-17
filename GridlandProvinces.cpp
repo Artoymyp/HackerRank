@@ -80,7 +80,7 @@ int GridlandProvinces(const std::string s1, const std::string s2)
 		}
 	}
 
-	N=s1.size();
+	N=static_cast<int>(s1.size());
 	path_hashes.clear();
 	path_hashes.reserve(N*N/2);
 
@@ -205,7 +205,7 @@ int GridlandProvinces(const std::string s1, const std::string s2)
 	auto new_size = path_hashes.size();
 
 
-	return new_size;
+	return static_cast<int>(new_size);
 }
 
 int main()
@@ -442,6 +442,7 @@ int main()
 
 #ifdef PROFILING
 	auto t1 = std::chrono::high_resolution_clock::now();
+	for (int ti{0}; ti < 10; ++ti) {
 #endif
 
 	for(const auto& pair:tests){
@@ -457,7 +458,8 @@ int main()
 	}
 
 #ifdef PROFILING
-	int total_time{0};
+	}
+	size_t total_time{0};
 	auto t2 = std::chrono::high_resolution_clock::now();
 	total_time += std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
 	std::cout << "Total time:" << total_time << std::endl;
