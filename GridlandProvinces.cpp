@@ -73,7 +73,7 @@ int GridlandProvinces(const std::string s1, const std::string s2)
 			
 			for(int j=0;j<Nmax;j++){
 				p_pow_char_array1[i*Nmax+j] = ((((i + 1) * p1) % mod) << 7) + ((i + 1) * p2) % mod2;
-
+				
 				p1=(p1 * p)%mod;
 				p2=(p2 * p)%mod2;
 			}
@@ -208,7 +208,7 @@ int GridlandProvinces(const std::string s1, const std::string s2)
 	return static_cast<int>(new_size);
 }
 
-int main()
+int main1()
 {
 	std::vector<std::string> input1{
 		"a",
@@ -464,4 +464,6 @@ int main()
 	total_time += std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
 	std::cout << "Total time:" << total_time << std::endl;
 #endif
+
+	return 0;
 }
